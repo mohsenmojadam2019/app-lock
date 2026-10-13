@@ -1,0 +1,1 @@
+<resources><style name="Theme.Kheili" parent="Theme.Material3.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:colorAccent">@color/accent</item><item name="android:navigationBarColor">@color/cream</item><item name="android:statusBarColor">@color/cream</item><item name="android:windowLightStatusBar">true</item></style></resources>
