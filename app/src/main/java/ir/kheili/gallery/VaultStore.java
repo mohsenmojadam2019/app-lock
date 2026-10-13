@@ -1,0 +1,10 @@
+package ir.kheili.gallery;
+import android.content.*;import android.net.Uri;import android.util.Base64;import java.io.*;import java.nio.charset.StandardCharsets;import java.security.*;import java.util.*;import javax.crypto.*;import javax.crypto.spec.GCMParameterSpec;import javax.crypto.spec.SecretKeySpec;
+/** Local-only encrypted vault. Plain files are never copied into shared storage. */
+public final class VaultStore {
+ private final Context c; private final File dir; private final byte[] key;
+ public VaultStore(Context c){this.c=c.getApplicationContext();dir=new File(c.getFilesDir(),"vault");dir.mkdirs();key=loadKey();}
+ private byte[] loadKey(){try{File f=new File(c.getFilesDir(),"vault.key");if(f.exists())return Base64.decode(read(f),Base64.NO_WRAP);byte[] k=new byte[32];new SecureRandom().nextBytes(k);write(f,Base64.encodeToString(k,Base64.NO_WRAP));return k;}catch(Exception e){throw new IllegalStateException(e);}}
+ public String importUri(Uri u,String name)throws Exception{String id=UUID.randomUUID().toString();File out=new File(dir,id+".bin");Cipher x=Cipher.getInstance("AES/GCM/NoPadding");byte[] iv=new byte[12];new SecureRandom().nextBytes(iv);x.init(Cipher.ENCRYPT_MODE,new SecretKeySpec(key,"AES"),new GCMParameterSpec(128,iv));try(InputStream in=c.getContentResolver().openInputStream(u);FileOutputStream fo=new FileOutputStream(out)){fo.write(iv);try(CipherOutputStream co=new CipherOutputStream(fo,x)){byte[] b=new byte[8192];int n;while((n=in.read(b))>0)co.write(b,0,n);}}write(new File(dir,id+".name"),name);return id;}
+ private static String read(File f)throws Exception{return new String(readBytes(f),StandardCharsets.UTF_8);}private static byte[] readBytes(File f)throws Exception{try(InputStream i=new FileInputStream(f)){ByteArrayOutputStream o=new ByteArrayOutputStream();byte[] b=new byte[8192];int n;while((n=i.read(b))>0)o.write(b,0,n);return o.toByteArray();}}private static void write(File f,String s)throws Exception{try(FileOutputStream o=new FileOutputStream(f)){o.write(s.getBytes(StandardCharsets.UTF_8));}}
+}
